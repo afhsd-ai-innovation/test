@@ -1,44 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Site Directory</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AFHSD Website Directory</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       max-width: 900px;
       margin: 40px auto;
       padding: 20px;
-      line-height: 1.6;
+      line-height: 1.5;
+      background: #f7f7f7;
+      color: #222;
     }
+
     h1 {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
+
+    p {
+      margin-top: 0;
+      color: #555;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
     ul {
-      padding-left: 20px;
+      list-style: none;
+      padding: 0;
+      margin: 20px 0 0 0;
     }
+
     li {
-      margin: 10px 0;
+      margin-bottom: 12px;
     }
+
     a {
-      font-size: 18px;
+      display: block;
+      padding: 14px 16px;
+      background: #ffffff;
+      border: 1px solid #d9d9d9;
+      border-radius: 8px;
       text-decoration: none;
+      color: #0b57d0;
+      font-weight: 600;
+      transition: background 0.2s ease, transform 0.1s ease;
     }
+
     a:hover {
-      text-decoration: underline;
+      background: #eef4ff;
+      transform: translateY(-1px);
+    }
+
+    .small {
+      font-size: 14px;
+      color: #777;
+      margin-top: 6px;
+      font-weight: normal;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: #fff8e1;
+      border: 1px solid #f0d98a;
+      color: #6b5a1d;
+    }
+
+    .error {
+      background: #fdecea;
+      border-color: #f5c2c0;
+      color: #8a1f17;
     }
   </style>
 </head>
 <body>
-  <h1>Website Directory</h1>
-  <p>Click a page below:</p>
+  <div class="card">
+    <h1>AFHSD Website Directory</h1>
+    <p>Available HTML pages in this repository:</p>
 
-  <ul>
-    <li><a href="spotify.html">Spotify</a></li>
-    <li><a href="about.html">About</a></li>
-    <li><a href="contact.html">Contact</a></li>
-    <li><a href="resources.html">Resources</a></li>
-  </ul>
+    <div id="status" class="status">Loading pages...</div>
+    <ul id="fileList"></ul>
+  </div>
+
+  <script>
+    const owner = "Mrileyafuhsd";
+    const repo = "aguafriaorgwebsite";
+    const branch = "main";
+
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents?ref=${branch}`;
+    const pagesBaseUrl = `https://${owner.toLowerCase()}.github.io/${repo}/`;
+
+    const statusEl = document.getElementById("status");
+    const fileListEl = document.getElementById("fileList");
+
+    function prettyName(filename) {
+      return filename
+        .replace(/\.html$/i, "")
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    async function loadFiles() {
+      try {
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error(`GitHub API returned ${response.status}`);
+        }
+
+        const items = await response.json();
+
+        const htmlFiles = items
+          .filter(item =>
+            item.type === "file" &&
+            item.name.toLowerCase().endsWith(".html") &&
+            item.name.toLowerCase() !== "index.html"
+          )
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        fileListEl.innerHTML = "";
+
+        if (htmlFiles.length === 0) {
+          statusEl.textContent = "No HTML files were found in the root of this repository.";
+          return;
+        }
+
+        statusEl.textContent = `Found ${htmlFiles.length} page${htmlFiles.length === 1 ? "" : "s"}.`;
+
+        htmlFiles.forEach(file => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          const pageUrl = pagesBaseUrl + encodeURIComponent(file.name);
+
+          a.href = pageUrl;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.innerHTML = `
+            ${prettyName(file.name)}
+            <div class="small">${file.name}</div>
+          `;
+
+          li.appendChild(a);
+          fileListEl.appendChild(li);
+        });
+      } catch (error) {
+        statusEl.textContent = `Could not load files: ${error.message}`;
+        statusEl.classList.add("error");
+      }
+    }
+
+    loadFiles();
+  </script>
 </body>
 </html>
